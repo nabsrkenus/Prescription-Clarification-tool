@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pharmacist-Doctor Prescription Clarification Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        h2 { text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        button { margin-top: 15px; padding: 10px; width: 100%; border: none; background-color: #007BFF; color: white; font-size: 16px; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #0056b3; }
+    </style>
+    <script>
+        function printPDF() {
+            window.print();
+        }
+        function sendEmail() {
+            const email = document.querySelector("input[name='physician_email']").value;
+            const doctorName = document.querySelector("input[name='physician_name']").value;
+            const pharmacistName = document.querySelector("input[name='pharmacist_name']").value;
+            const patientName = document.querySelector("input[name='patient_name']").value;
+            const dob = document.querySelector("input[name='dob']").value;
+            const medication = document.querySelector("input[name='medication_name']").value;
+            const strength = document.querySelector("input[name='strength']").value;
+            const duration = document.querySelector("input[name='duration']").value;
+            const clarification = document.querySelector("select[name='clarification']").value;
+            const clarificationFreeText = document.querySelector("textarea[name='clarification_free']").value;
+            const recommendation = document.querySelector("textarea[name='recommendation']").value;
+            const callbackPhone = "978-858-2162";
+
+            if(email) {
+                const subject = encodeURIComponent("Prescription Clarification Request");
+                const body = encodeURIComponent(`Dear Dr. ${doctorName},
+
+My name is ${pharmacistName}, and I am a pharmacist reviewing a prescription for one of our mutual patients. I am reaching out to seek clarification regarding the following details:
+
+Patient Name: ${patientName}
+Date of Birth: ${dob}
+Medication: ${medication}
+Strength: ${strength}
+Duration: ${duration}
+
+Clarification Issue: ${clarification}
+Additional Details: ${clarificationFreeText}
+Recommendation: ${recommendation}
+
+Please review and provide guidance at your earliest convenience.
+
+For further discussion, you may contact me at ${callbackPhone}.
+
+Best Regards,
+${pharmacistName}
+Pharmacy Team`);
+                window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+            } else {
+                alert("Please enter a physician's email address.");
+            }
+        }
+        function sendFax() {
+            alert("Fax functionality requires a fax service integration.");
+        }
+        function processFile(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    Tesseract.recognize(reader.result, 'eng')
+                        .then(({ data: { text } }) => {
+                            document.querySelector("input[name='medication_name']").value = extractField(text, 'Medication');
+                            document.querySelector("input[name='strength']").value = extractField(text, 'Strength');
+                            document.querySelector("input[name='patient_name']").value = extractField(text, 'Patient');
+                            document.querySelector("input[name='dob']").value = extractField(text, 'DOB');
+                            document.querySelector("input[name='duration']").value = extractField(text, 'Duration');
+                            document.querySelector("textarea[name='clarification_free']").value = extractField(text, 'Clarification Issue');
+                        })
+                        .catch(error => console.error("OCR Error:", error));
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert("Please upload a valid image file.");
+            }
+        }
+        function extractField(text, keyword) {
+            const regex = new RegExp(`${keyword}:\s*(.*)`, 'i');
+            const match = text.match(regex);
+            return match ? match[1].trim() : '';
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Prescription Clarification Form</h2>
+        <form id="clarificationForm">
+            <label>Physician Email:</label>
+            <input type="email" name="physician_email" required>
+            
+            <label>Physician Name:</label>
+            <input type="text" name="physician_name" required>
+            
+            <label>Pharmacist Name:</label>
+            <input type="text" name="pharmacist_name" required>
+            
+            <label>Attach Prescription Image or File:</label>
+            <input type="file" name="prescription_file" accept="image/*" onchange="processFile(event)">
+            
+            <label>Patient Name:</label>
+            <input type="text" name="patient_name" required>
+            
+            <label>Date of Birth:</label>
+            <input type="date" name="dob" required>
+            
+            <label>Medication Name:</label>
+            <input type="text" name="medication_name" required>
+            
+            <label>Strength:</label>
+            <input type="text" name="strength" required>
+            
+            <label>Duration:</label>
+            <input type="text" name="duration" required>
+            
+            <label>Clarification Issue:</label>
+            <select name="clarification">
+                <option value="Incorrect dosage">Incorrect dosage</option>
+                <option value="Illegible handwriting">Illegible handwriting</option>
+                <option value="Duplicate therapy">Duplicate therapy</option>
+                <option value="Allergy conflict">Allergy conflict</option>
+                <option value="Drug interaction concern">Drug interaction concern</option>
+                <option value="Incomplete prescription details">Incomplete prescription details</option>
+                <option value="Formulation error">Formulation error</option>
+                <option value="Other">Other (Specify Below)</option>
+            </select>
+            <textarea name="clarification_free"></textarea>
+            
+            <label>Recommendation:</label>
+            <textarea name="recommendation" required></textarea>
+            
+            <button type="submit">Submit</button>
+            <button type="button" onclick="printPDF()">Print PDF</button>
+            <button type="button" onclick="sendEmail()">Email</button>
+            <button type="button" onclick="sendFax()">Fax</button>
+        </form>
+    </div>
+</body>
+</html>
